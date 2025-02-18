@@ -21,14 +21,13 @@ console.log('Depois do middleware JSON');
 // Configurar o Express para servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 
-//Conexão com o banco de dados
-db.all('SELECT * FROM usuarios', (err, rows) => {
-    if (err) {
-        console.error('Erro ao buscar usuários:', err.message);
-    } else {
-        console.log('Usuários:', rows);
-    }
-});
+// Conexão com o banco de dados
+try {
+    const rows = db.prepare('SELECT * FROM usuarios').all();
+    console.log('Usuários:', rows);
+} catch (err) {
+    console.error('Erro ao buscar usuários:', err.message);
+}
 
 // Rotas
 app.use('/api/auth', authRoutes);

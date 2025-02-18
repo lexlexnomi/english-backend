@@ -9,13 +9,12 @@ router.get('/', (req, res) => {
         SELECT vocabularios.*, aulas.numero as numero_aula, aulas.data 
         FROM vocabularios
         JOIN aulas ON vocabularios.aula_id = aulas.id`;
-    db.all(query, (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-        } else {
-            res.json(rows);
-        }
-    });
+    try {
+        const rows = db.prepare(query).all(); // Método síncrono
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Rota para buscar vocabularios por aula
@@ -27,59 +26,46 @@ router.get('/aula/:numeroAula', (req, res) => {
         FROM vocabularios
         JOIN aulas ON vocabularios.aula_id = aulas.id
         WHERE aulas.numero = ?`;
-    db.all(query, [numeroAula], (err, rows) => {
-        if (err) {
-            console.error('Erro ao buscar vocabulários:', err.message);
-            res.status(500).json({ error: err.message });
-        } else {
-            console.log('Resultado da consulta:', rows); // Log de depuração
-            res.json(rows);
-        }
-    });
+    try {
+        const rows = db.prepare(query).all(numeroAula); // Método síncrono com parâmetro
+        console.log('Resultado da consulta:', rows); // Log de depuração
+        res.json(rows);
+    } catch (err) {
+        console.error('Erro ao buscar vocabulários:', err.message); // Log de erro
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Função para verificar se um tema já existe
-async function verificarOuCriarTema(tema) {
-    return new Promise((resolve, reject) => {
-        const query = 'SELECT id FROM temas WHERE nome = ?';
-        db.get(query, [tema], (err, row) => {
-            if (err) {
-                reject(err);
-            } else if (row) {
-                // Tema já existe, retorna o ID
-                resolve(row.id);
-            } else {
-                // Tema não existe, cria um novo
-                const insertQuery = 'INSERT INTO temas (nome) VALUES (?)';
-                db.run(insertQuery, [tema], function (err) {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(this.lastID); // Retorna o ID do novo tema
-                    }
-                });
-            }
-        });
-    });
+function verificarOuCriarTema(tema) {
+    const query = 'SELECT id FROM temas WHERE nome = ?';
+    const row = db.prepare(query).get(tema); // Método síncrono
+        if (row) {
+            // Tema já existe, retorna o ID
+            resolve(row.id);
+        } else {
+            // Tema não existe, cria um novo
+            const insertQuery = 'INSERT INTO temas (nome) VALUES (?)';
+            const stmt = db.prepare(insertQuery);
+            const result = stmt.run(tema);
+            return result.lastInsertRowid; // Retorna o ID da nova tag
+        }
 }
 
 // Adicionar um novo vocabulário
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
     const { numero_aula, palavra, significado, tema, frase_exemplo } = req.body;
 
     try {
         // Verifica se o tema já existe ou cria um novo
-        const temaId = await verificarOuCriarTema(tema);
+        const temaId = verificarOuCriarTema(tema);
 
         // Insere o texto no banco de dados
         const query = 'INSERT INTO vocabularios (numero_aula, palavra, significado, tema_id, frase_exemplo) VALUES (?, ?, ?, ?, ?)';
-        db.run(query, [numero_aula, palavra, significado, temaId, frase_exemplo], function (err) {
-            if (err) {
-                res.status(500).json({ error: err.message });
-            } else {
-                res.json({ id: this.lastID });
-            }
-        });
+        const stmt = db.prepare(query);
+        const result = stmt.run(numero_aula, palavra, significado, temaId, frase_exemplo);
+
+        res.json({ id: result.lastInsertRowid });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

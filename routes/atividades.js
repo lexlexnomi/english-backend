@@ -9,13 +9,12 @@ router.get('/', (req, res) => {
         SELECT atividades.*, aulas.numero as numero_aula, aulas.data 
         FROM atividades
         JOIN aulas ON atividades.aula_id = aulas.id`;
-    db.all(query, (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-        } else {
-            res.json(rows);
-        }
-    });
+    try {
+        const rows = db.prepare(query).all(); // Método síncrono
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Rota para buscar atividades por aula
@@ -28,28 +27,27 @@ router.get('/aula/:numeroAula', (req, res) => {
         FROM atividades
         JOIN aulas ON atividades.aula_id = aulas.id
         WHERE aulas.numero = ?`;
-    db.all(query, [numeroAula], (err, rows) => {
-        if (err) {
-            console.error('Erro ao buscar atividades:', err.message);
-            res.status(500).json({ error: err.message });
-        } else {
-            console.log('Resultado da consulta:', rows); // Log de depuração
-            res.json(rows);
-        }
-    });
+    try {
+        const rows = db.prepare(query).all(numeroAula); // Método síncrono com parâmetro
+        console.log('Resultado da consulta:', rows); // Log de depuração
+        res.json(rows);
+    } catch (err) {
+        console.error('Erro ao buscar atividades:', err.message); // Log de erro
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Adicionar uma nova atividade
 router.post('/', (req, res) => {
     const { titulo, data, numero_aula } = req.body;
     const query = 'INSERT INTO atividades (titulo, data, numero_aula) VALUES (?, ?, ?, ?)';
-    db.run(query, [titulo, data, numero_aula], function (err) {
-        if (err) {
-            res.status(500).json({ error: err.message });
-        } else {
-            res.json({ id: this.lastID });
-        }
-    });
+    try {
+        const stmt = db.prepare(query); // Preparando a consulta
+        const result = stmt.run(titulo, data, numero_aula); // Executando de forma síncrona
+        res.json({ id: result.lastInsertRowid }); // Usando lastInsertRowid
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Marcar atividade como concluída
@@ -57,14 +55,14 @@ router.put('/:id/concluir', (req, res) => {
     const { id } = req.params;
     const { concluida } = req.body;
     const query = 'UPDATE atividades SET concluida = ? WHERE id = ?';
-    db.run(query, [concluida, id], function (err) {
-        if (err) {
-            console.error('Erro ao atualizar atividade:', err.message); // Log de erro
-            res.status(500).json({ error: err.message });
-        } else {
-            res.json({ message: 'Status da atividade atualizado.' });
-        }
-    });
+    try {
+        const stmt = db.prepare(query); // Preparando a consulta
+        stmt.run(concluida, id); // Executando de forma síncrona
+        res.json({ message: 'Status da atividade atualizado.' });
+    } catch (err) {
+        console.error('Erro ao atualizar atividade:', err.message); // Log de erro
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;
