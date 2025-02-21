@@ -1,6 +1,6 @@
 console.log('Servidor iniciado...');
 const express = require('express');
-const db = require('./database/db');
+const { pool } = require('./database/db');
 const authRoutes = require('./routes/authRoutes');
 const aulasRoutes = require('./routes/aulas');
 const atividadesRoutes = require('./routes/atividades');
@@ -14,20 +14,20 @@ const app = express();
 const PORT = 3000;
 
 // Middleware para permitir o uso de JSON no corpo das requisições
-console.log('Antes do middleware JSON');
 app.use(express.json());
-console.log('Depois do middleware JSON');
 
 // Configurar o Express para servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 
 // Conexão com o banco de dados
-try {
-    const rows = db.prepare('SELECT * FROM usuarios').all();
-    console.log('Usuários:', rows);
-} catch (err) {
-    console.error('Erro ao buscar usuários:', err.message);
-}
+(async () => {
+    try {
+        const result = await pool.query('SELECT * FROM usuarios');
+        console.log('Usuários:', result.rows); // Acesso aos dados retornados do PostgreSQL
+    } catch (err) {
+        console.error('Erro ao buscar usuários:', err.message);
+    }
+})();
 
 // Rotas
 app.use('/api/auth', authRoutes);

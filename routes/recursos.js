@@ -1,13 +1,13 @@
 const express = require('express');
-const db = require('../database/db');
+const pool = require('../database/db');
 
 const router = express.Router();
 
 // Listar todos os recursos
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const query = 'SELECT * FROM recursos';
-        const rows = db.prepare(query).all(); // Método síncrono
+        const { rows } = await pool.query(query);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -15,36 +15,33 @@ router.get('/', (req, res) => {
 });
 
 // Função para verificar se uma categoria já existe
-function verificarOuCriarCategoria(categoria) {
-    const query = 'SELECT id FROM categorias WHERE nome = ?';
-    const row = db.prepare(query).get(categoria); // Método síncrono
-
-        if (row) {
-            // Categoria já existe, retorna o ID
-            resolve(row.id);
+async function verificarOuCriarCategoria(categoria) {
+    const query = 'SELECT id FROM categorias WHERE nome = $1';
+    try {
+        const { rows } = await pool.query(query, [categoria]);
+        if (rows.length > 0) {
+            return rows[0].id;
         } else {
-            // Categoria não existe, cria uma nova
-            const insertQuery = 'INSERT INTO categorias (nome) VALUES (?)';
-            const stmt = db.prepare(insertQuery);
-            const result = stmt.run(categoria);
-            return result.lastInsertRowid; // Retorna o ID da nova tag
+            const insertQuery = "INSERT INTO categorias (nome) VALUES ($1) RETURNING id";
+            const { rows: insertRows } = await pool.query(insertQuery, [categoria]);
+            return insertRows[0].id;
+        }
+    } catch (err) {
+        console.error("Erro ao verificar/criar categoria:", err);
+        throw err;
     }
 }
 
 // Adicionar um novo recurso
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { nome, categoria, url, descricao } = req.body;
 
     try {
-        // Verifica se a categoria já existe ou cria uma nova
-        const categoriaId = verificarOuCriarCategoria(categoria);
+        const categoriaId = await verificarOuCriarCategoria(categoria);
+        const query = "INSERT INTO recursos (nome, categoria_id, url, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
+        const { rows } = await pool.query(query, [nome, categoriaId, url, descricao]);
 
-        // Insere o recurso no banco de dados
-        const query = 'INSERT INTO recursos (nome, categoria_id, url, descricao) VALUES (?, ?, ?, ?)';
-        const stmt = db.prepare(query);
-        const result = stmt.run(nome, categoriaId, url, descricao);
-
-        res.json({ id: result.lastInsertRowid });
+        res.json({ id: rows[0].id });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

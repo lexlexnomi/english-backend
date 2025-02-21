@@ -1,16 +1,16 @@
 const express = require('express');
-const db = require('../database/db');
+const pool = require('../database/db');
 
 const router = express.Router();
 
 // Listar todas as atividades
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const query = `
         SELECT atividades.*, aulas.numero as numero_aula, aulas.data 
         FROM atividades
         JOIN aulas ON atividades.aula_id = aulas.id`;
     try {
-        const rows = db.prepare(query).all(); // Método síncrono
+        const { rows } = await pool.query(query);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -18,17 +18,16 @@ router.get('/', (req, res) => {
 });
 
 // Rota para buscar atividades por aula
-router.get('/aula/:numeroAula', (req, res) => {
-    console.log('Rota /aula/:numeroAula chamada'); // Log de depuração
+router.get('/aula/:numeroAula', async (req, res) => {
     const { numeroAula } = req.params;
     console.log(`Requisição recebida para a aula ${numeroAula}`);
     const query = `
         SELECT atividades.*, aulas.numero as numero_aula, aulas.data 
         FROM atividades
         JOIN aulas ON atividades.aula_id = aulas.id
-        WHERE aulas.numero = ?`;
+        WHERE aulas.numero = $1`;
     try {
-        const rows = db.prepare(query).all(numeroAula); // Método síncrono com parâmetro
+        const { rows } = await pool.query(query, [numeroAula]);
         console.log('Resultado da consulta:', rows); // Log de depuração
         res.json(rows);
     } catch (err) {
@@ -38,32 +37,29 @@ router.get('/aula/:numeroAula', (req, res) => {
 });
 
 // Adicionar uma nova atividade
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { titulo, data, numero_aula } = req.body;
-    const query = 'INSERT INTO atividades (titulo, data, numero_aula) VALUES (?, ?, ?, ?)';
+    const query = 'INSERT INTO atividades (titulo, data, numero_aula) VALUES ($1, $2, $3) RETURNING id';
     try {
-        const stmt = db.prepare(query); // Preparando a consulta
-        const result = stmt.run(titulo, data, numero_aula); // Executando de forma síncrona
-        res.json({ id: result.lastInsertRowid }); // Usando lastInsertRowid
+        const { rows } = await pool.query(query, [titulo, data, numero_aula]);
+        res.json({ id: rows[0].id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 // Marcar atividade como concluída
-router.put('/:id/concluir', (req, res) => {
+router.put('/:id/concluir', async (req, res) => {
     const { id } = req.params;
     const { concluida } = req.body;
-    const query = 'UPDATE atividades SET concluida = ? WHERE id = ?';
+    const query = 'UPDATE atividades SET concluida = $1 WHERE id = $2';
     try {
-        const stmt = db.prepare(query); // Preparando a consulta
-        stmt.run(concluida, id); // Executando de forma síncrona
-        res.json({ message: 'Status da atividade atualizado.' });
+        await pool.query(query, [concluida, id]);
+        res.json({ message: "Status da atividade atualizado." });
     } catch (err) {
-        console.error('Erro ao atualizar atividade:', err.message); // Log de erro
+        console.error("Erro ao atualizar atividade:", err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
 module.exports = router;
-console.log('Rotas de atividades carregadas'); // Log de depuração

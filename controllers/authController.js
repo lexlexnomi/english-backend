@@ -1,45 +1,37 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-
-// Dados dos usuários (você pode adicionar manualmente)
-const users = [
-    {
-        id: 1,
-        username: 'alexs.oliveira1998@gmail.com',
-        password: '$2a$10$kRqoP5ucpZ9VvUjHtyboy.T.AKz4s3ItfGssSg9BI2SNuxWIoob3e', // Senha: "16091998"
-        name: 'Alex Oliveira',
-        avatar: 'images/user-avatar.png'
-    },
-    {
-        id: 2,
-        username: 'carol8novembro@gmail.com',
-        password: '$2a$10$9fniutN7LEc7wpMFZPqF.eCDcoNYWS8Hj.ohnUbWIsBctTC6s.qne', // Senha: "08111997"
-        name: 'teacher Carol',
-        avatar: 'images/prof-avatar.png'
-    }
-];
+const { pool } = require('../database/db'); // Importando a conexão com PostgreSQL
 
 // Função para fazer login
-const login = (req, res) => {
+const login = async (req, res) => {
     const { username, password } = req.body;
 
-    // Encontrar o usuário pelo username
-    const user = users.find(u => u.username === username);
-    if (!user) {
-        return res.status(400).json({ message: 'Usuário não encontrado.' });
+    try {
+        // Consultando o banco de dados para encontrar o usuário
+        const result = await pool.query('SELECT * FROM usuarios WHERE username = $1', [username]);
+
+        // Se o usuário não for encontrado
+        if (result.rows.length === 0) {
+            return res.status(400).json({ message: 'Usuário não encontrado.' });
+        }
+
+        const user = result.rows[0]; // Obtendo o primeiro usuário da resposta
+
+        // Verificar a senha
+        const isPasswordValid = bcrypt.compareSync(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: 'Senha incorreta.' });
+        }
+
+        // Gerar token JWT
+        const token = jwt.sign({ id: user.id, username: user.username }, 'segredo', { expiresIn: '1h' });
+
+        // Retornar o token e os dados do usuário
+        res.json({ token, user: { name: user.name, avatar: user.avatar } });
+    } catch (err) {
+        console.error('Erro ao fazer login:', err);
+        return res.status(500).json({ message: 'Erro no servidor.' });
     }
-
-    // Verificar a senha
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    if (!isPasswordValid) {
-        return res.status(400).json({ message: 'Senha incorreta.' });
-    }
-
-    // Gerar token JWT
-    const token = jwt.sign({ id: user.id, username: user.username }, 'segredo', { expiresIn: '1h' });
-
-    // Retornar o token e os dados do usuário
-    res.json({ token, user: { name: user.name, avatar: user.avatar } });
 };
 
 // Função para verificar o token (middleware)

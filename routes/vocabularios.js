@@ -1,16 +1,16 @@
 const express = require('express');
-const db = require('../database/db');
+const pool = require('../database/db');
 
 const router = express.Router();
 
 // Listar todos os vocabulários
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const query = `
         SELECT vocabularios.*, aulas.numero as numero_aula, aulas.data 
         FROM vocabularios
         JOIN aulas ON vocabularios.aula_id = aulas.id`;
     try {
-        const rows = db.prepare(query).all(); // Método síncrono
+        const { rows } = await pool.query(query);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -18,54 +18,52 @@ router.get('/', (req, res) => {
 });
 
 // Rota para buscar vocabularios por aula
-router.get('/aula/:numeroAula', (req, res) => {
+router.get('/aula/:numeroAula', async (req, res) => {
     const { numeroAula } = req.params;
     console.log(`Buscando vocabulários para a aula ${numeroAula}`);
     const query = `
         SELECT vocabularios.*, aulas.numero as numero_aula, aulas.data 
         FROM vocabularios
         JOIN aulas ON vocabularios.aula_id = aulas.id
-        WHERE aulas.numero = ?`;
+        WHERE aulas.numero = $1`;
     try {
-        const rows = db.prepare(query).all(numeroAula); // Método síncrono com parâmetro
-        console.log('Resultado da consulta:', rows); // Log de depuração
+        const { rows } = await pool.query(query, [numeroAula]);
+        console.log("Resultado da consulta:", rows);
         res.json(rows);
     } catch (err) {
-        console.error('Erro ao buscar vocabulários:', err.message); // Log de erro
+        console.error("Erro ao buscar vocabulários:", err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
 // Função para verificar se um tema já existe
-function verificarOuCriarTema(tema) {
-    const query = 'SELECT id FROM temas WHERE nome = ?';
-    const row = db.prepare(query).get(tema); // Método síncrono
-        if (row) {
-            // Tema já existe, retorna o ID
-            resolve(row.id);
+async function verificarOuCriarTema(tema) {
+    const query = 'SELECT id FROM temas WHERE nome = $1';
+    try {
+        const { rows } = await pool.query(query, [tema]);
+        if (rows.length > 0) {
+            return rows[0].id;
         } else {
-            // Tema não existe, cria um novo
-            const insertQuery = 'INSERT INTO temas (nome) VALUES (?)';
-            const stmt = db.prepare(insertQuery);
-            const result = stmt.run(tema);
-            return result.lastInsertRowid; // Retorna o ID da nova tag
+            const insertQuery = "INSERT INTO temas (nome) VALUES ($1) RETURNING id";
+            const { rows: insertRows } = await pool.query(insertQuery, [tema]);
+            return insertRows[0].id;
         }
+    } catch (err) {
+        console.error("Erro ao verificar/criar tema:", err);
+        throw err;
+    }
 }
 
 // Adicionar um novo vocabulário
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { numero_aula, palavra, significado, tema, frase_exemplo } = req.body;
 
     try {
-        // Verifica se o tema já existe ou cria um novo
-        const temaId = verificarOuCriarTema(tema);
+        const temaId = await verificarOuCriarTema(tema);
+        const query = "INSERT INTO vocabularios (numero_aula, palavra, significado, tema_id, frase_exemplo) VALUES ($1, $2, $3, $4, $5) RETURNING id";
+        const { rows } = await pool.query(query, [numero_aula, palavra, significado, temaId, frase_exemplo]);
 
-        // Insere o texto no banco de dados
-        const query = 'INSERT INTO vocabularios (numero_aula, palavra, significado, tema_id, frase_exemplo) VALUES (?, ?, ?, ?, ?)';
-        const stmt = db.prepare(query);
-        const result = stmt.run(numero_aula, palavra, significado, temaId, frase_exemplo);
-
-        res.json({ id: result.lastInsertRowid });
+        res.json({ id: rows[0].id });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
