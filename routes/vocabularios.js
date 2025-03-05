@@ -56,12 +56,12 @@ async function verificarOuCriarTema(tema) {
 
 // Adicionar um novo vocabulário
 router.post('/', async (req, res) => {
-    const { numero_aula, palavra, significado, tema, frase_exemplo } = req.body;
+    const { aula_id, palavra, significado, tema, frase_exemplo } = req.body;
 
     try {
         const temaId = await verificarOuCriarTema(tema);
-        const query = "INSERT INTO vocabularios (numero_aula, palavra, significado, tema_id, frase_exemplo) VALUES ($1, $2, $3, $4, $5) RETURNING id";
-        const { rows } = await pool.query(query, [numero_aula, palavra, significado, temaId, frase_exemplo]);
+        const query = "INSERT INTO vocabularios (aula_id, palavra, significado, tema_id, frase_exemplo) VALUES ($1, $2, $3, $4, $5) RETURNING id";
+        const { rows } = await pool.query(query, [aula_id, palavra, significado, temaId, frase_exemplo]);
 
         res.json({ id: rows[0].id });
     } catch (error) {

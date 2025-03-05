@@ -38,10 +38,10 @@ router.get('/aula/:numeroAula', async (req, res) => {
 
 // Adicionar uma nova atividade
 router.post('/', async (req, res) => {
-    const { titulo, data, numero_aula } = req.body;
-    const query = 'INSERT INTO atividades (titulo, data, numero_aula) VALUES ($1, $2, $3) RETURNING id';
+    const { titulo, data, aula_id } = req.body;
+    const query = 'INSERT INTO atividades (titulo, data, aula_id) VALUES ($1, $2, $3) RETURNING id';
     try {
-        const { rows } = await pool.query(query, [titulo, data, numero_aula]);
+        const { rows } = await pool.query(query, [titulo, data, aula_id]);
         res.json({ id: rows[0].id });
     } catch (err) {
         res.status(500).json({ error: err.message });

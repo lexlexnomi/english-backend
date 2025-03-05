@@ -57,12 +57,12 @@ async function verificarOuCriarTag(tag) {
 
 // Adicionar uma nova dúvida
 router.post('/', async (req, res) => {
-    const { titulo, numero_aula, tag, descricao } = req.body;
+    const { titulo, aula_id, tag, descricao } = req.body;
 
     try {
         const tagId = await verificarOuCriarTag(tag);
-        const query = "INSERT INTO duvidas (titulo, numero_aula, tag_id, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
-        const { rows } = await pool.query(query, [titulo, numero_aula, tagId, descricao]);
+        const query = "INSERT INTO duvidas (titulo, aula_id, tag_id, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
+        const { rows } = await pool.query(query, [titulo, aula_id, tagId, descricao]);
 
         res.json({ id: rows[0].id });
     } catch (error) {

@@ -72,12 +72,12 @@ async function verificarOuCriarTema(tema) {
 
 // Adicionar um novo texto
 router.post('/', async (req, res) => {
-    const { titulo, numero_aula, tema, conteudo } = req.body;
+    const { titulo, aula_id, tema, conteudo } = req.body;
 
     try {
         const temaId = await verificarOuCriarTema(tema);
-        const query = "INSERT INTO textos (titulo, numero_aula, tema_id, conteudo) VALUES ($1, $2, $3, $4) RETURNING id";
-        const { rows } = await pool.query(query, [titulo, numero_aula, temaId, conteudo]);
+        const query = "INSERT INTO textos (titulo, aula_id, tema_id, conteudo) VALUES ($1, $2, $3, $4) RETURNING id";
+        const { rows } = await pool.query(query, [titulo, aula_id, temaId, conteudo]);
 
         res.json({ id: rows[0].id });
     } catch (error) {
