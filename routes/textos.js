@@ -75,12 +75,15 @@ router.post('/', async (req, res) => {
     const { titulo, aula_id, tema, conteudo } = req.body;
 
     try {
+        console.log("Recebendo dados:", req.body); // Verifique se os dados estão corretos
+
         const temaId = await verificarOuCriarTema(tema);
         const query = "INSERT INTO textos (titulo, aula_id, tema_id, conteudo) VALUES ($1, $2, $3, $4) RETURNING id";
         const { rows } = await pool.query(query, [titulo, aula_id, temaId, conteudo]);
 
         res.json({ id: rows[0].id });
     } catch (error) {
+        console.error("Erro ao adicionar texto:", error.message); // Adicionando logs detalhados
         res.status(500).json({ error: error.message });
     }
 });

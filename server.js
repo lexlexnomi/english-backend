@@ -12,7 +12,7 @@ const recursosRoutes = require('./routes/recursos');
 
 const path = require('path'); // Importe o módulo 'path'
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PGPORT || 3000;
 
 // Middleware para permitir o uso de JSON no corpo das requisições
 app.use(express.json());
