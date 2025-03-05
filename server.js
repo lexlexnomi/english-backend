@@ -1,5 +1,6 @@
 console.log('Servidor iniciado...');
 const express = require('express');
+const cors = require('cors');
 const pool = require('./database/db');
 const authRoutes = require('./routes/authRoutes');
 const aulasRoutes = require('./routes/aulas');
@@ -17,7 +18,14 @@ const PORT = 3000;
 app.use(express.json());
 
 // Configurar o Express para servir arquivos estáticos
-//app.use(express.static(path.join(__dirname, '../frontend/public')));
+//app.use(express.static(path.join(__dirname, 'frontend/public')));
+
+// Ou permitir apenas o frontend específico
+app.use(cors({
+    origin: 'https://englishclass-fitf.onrender.com',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
+}));
 
 // Conexão com o banco de dados
 (async () => {
