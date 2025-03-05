@@ -16,6 +16,7 @@ router.get("/", async (req, res) => {
 
 // Rota para adicionar uma nova aula
 router.post('/', async (req, res) => {
+    // n sei porque é usado let aqui ao inves de const
     let { numero, data } = req.body;
 
     // Converte a data para o formato correto (YYYY-MM-DD)
