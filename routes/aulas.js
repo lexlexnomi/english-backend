@@ -16,11 +16,15 @@ router.get("/", async (req, res) => {
 
 // Rota para adicionar uma nova aula
 router.post('/', async (req, res) => {
-    const { numero, data } = req.body;
-    const query = "INSERT INTO aulas (numero, data) VALUES ($1, $2) RETURNING id";
+    let { numero, data } = req.body;
 
     try {
-        const { rows } = await pool.query(query, [numero, data]);
+        // Converte a data para YYYY-MM-DD antes de inserir no banco
+        const formattedDate = new Date(data).toISOString().split('T')[0]; 
+
+        const query = "INSERT INTO aulas (numero, data) VALUES ($1, $2) RETURNING id";
+        const { rows } = await pool.query(query, [numero, formattedDate]);
+
         res.json({ id: rows[0].id });
     } catch (err) {
         res.status(500).json({ error: err.message });
