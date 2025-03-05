@@ -6,7 +6,7 @@ const router = express.Router();
 // Rota para listar todas as aulas por número
 router.get("/", async (req, res) => {
     try {
-        const query = "SELECT id, numero, data FROM aulas";
+        const query = "SELECT id, numero, data::date AS data FROM aulas";
         const { rows } = await pool.query(query);
         res.json(rows);
     } catch (err) {
