@@ -17,7 +17,7 @@ const PORT = 3000;
 app.use(express.json());
 
 // Configurar o Express para servir arquivos estáticos
-app.use(express.static(path.join(__dirname, '/frontend/public')));
+app.use(express.static(path.join(__dirname, './frontend/public')));
 
 // Conexão com o banco de dados
 (async () => {
@@ -41,7 +41,7 @@ console.log('Rotas configuradas com sucesso'); // Log de depuração
 
 // Rota padrão para o frontend
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '/frontend/public/index.html'));
+    res.sendFile(path.join(__dirname, './frontend/public/index.html'));
 });
 
 // Iniciar o servidor
