@@ -16,4 +16,4 @@ pool.connect()
   .then(() => console.log("🔥 Conectado ao PostgreSQL do Render!"))
   .catch(err => console.error("Erro ao conectar ao PostgreSQL:", err));
 
-module.exports = { pool };
+module.exports = pool;

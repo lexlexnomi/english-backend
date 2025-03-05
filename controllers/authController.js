@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { pool } = require('../database/db'); // Importando a conexão com PostgreSQL
+const pool = require('../database/db'); // Importando a conexão com PostgreSQL
 
 // Função para fazer login
 const login = async (req, res) => {

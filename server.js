@@ -1,6 +1,6 @@
 console.log('Servidor iniciado...');
 const express = require('express');
-const { pool } = require('./database/db');
+const pool = require('./database/db');
 const authRoutes = require('./routes/authRoutes');
 const aulasRoutes = require('./routes/aulas');
 const atividadesRoutes = require('./routes/atividades');
