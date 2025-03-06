@@ -6,9 +6,10 @@ const router = express.Router();
 // Listar todos os vocabulários
 router.get('/', async (req, res) => {
     const query = `
-        SELECT vocabularios.*, aulas.numero as numero_aula, aulas.data 
+        SELECT vocabularios.*, aulas.numero as numero_aula, aulas.data, temas.nome as tema 
         FROM vocabularios
-        JOIN aulas ON vocabularios.aula_id = aulas.id`;
+        JOIN aulas ON vocabularios.aula_id = aulas.id
+        JOIN temas ON vocabularios.tema_id = temas.id`;
     try {
         const { rows } = await pool.query(query);
         res.json(rows);

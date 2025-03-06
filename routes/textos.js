@@ -6,9 +6,10 @@ const router = express.Router();
 // Listar todos os textos
 router.get('/', async (req, res) => {
     const query = `
-        SELECT textos.*, aulas.numero as numero_aula, aulas.data 
+        SELECT textos.*, aulas.numero as numero_aula, aulas.data, temas.nome as tema
         FROM textos
-        JOIN aulas ON textos.aula_id = aulas.id`;
+        JOIN aulas ON textos.aula_id = aulas.id
+        JOIN temas ON textos.tema_id = temas.id`;
     try {
         const { rows } = await pool.query(query);
         res.json(rows);
