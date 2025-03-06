@@ -6,9 +6,10 @@ const router = express.Router();
 // Listar todas as dúvidas
 router.get('/', async (req, res) => {
     const query = `
-        SELECT duvidas.*, aulas.numero as numero_aula, aulas.data 
+        SELECT duvidas.*, aulas.numero as numero_aula, aulas.data, tags.nome as tag 
         FROM duvidas
-        JOIN aulas ON duvidas.aula_id = aulas.id`;
+        JOIN aulas ON duvidas.aula_id = aulas.id
+        JOIN tags ON duvidas.tag_id = tags.id`;
     try {
         const { rows } = await pool.query(query);
         res.json(rows);
@@ -60,6 +61,8 @@ router.post('/', async (req, res) => {
     const { titulo, aula_id, tag, descricao } = req.body;
 
     try {
+        console.log("Recebendo dados:", req.body); // Verifique se os dados estão corretos
+        
         const tagId = await verificarOuCriarTag(tag);
         const query = "INSERT INTO duvidas (titulo, aula_id, tag_id, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
         const { rows } = await pool.query(query, [titulo, aula_id, tagId, descricao]);
