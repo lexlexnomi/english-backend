@@ -6,10 +6,7 @@ const router = express.Router();
 // Listar todos os recursos
 router.get('/', async (req, res) => {
     try {
-        const query = `
-        SELECT recursos.*, categorias.nome as categoria
-        FROM recursos
-        JOIN categorias ON recursos.categoria_id = categorias.id`;
+        const query = 'SELECT * FROM recursos';
         const { rows } = await pool.query(query);
         res.json(rows);
     } catch (err) {
@@ -41,7 +38,7 @@ router.post('/', async (req, res) => {
 
     try {
         console.log("Recebendo dados:", req.body); // Verifique se os dados estão corretos
-
+        
         const categoriaId = await verificarOuCriarCategoria(categoria);
         const query = "INSERT INTO recursos (nome, categoria_id, url, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
         const { rows } = await pool.query(query, [nome, categoriaId, url, descricao]);
