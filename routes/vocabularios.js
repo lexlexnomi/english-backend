@@ -59,6 +59,8 @@ router.post('/', async (req, res) => {
     const { aula_id, palavra, significado, tema, frase_exemplo } = req.body;
 
     try {
+        console.log("Recebendo dados:", req.body); // Verifique os dados recebidos
+
         const temaId = await verificarOuCriarTema(tema);
         const query = "INSERT INTO vocabularios (aula_id, palavra, significado, tema_id, frase_exemplo) VALUES ($1, $2, $3, $4, $5) RETURNING id";
         const { rows } = await pool.query(query, [aula_id, palavra, significado, temaId, frase_exemplo]);
