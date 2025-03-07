@@ -22,7 +22,7 @@ app.use(express.json());
 
 // Ou permitir apenas o frontend específico
 app.use(cors({
-    origin: ['https://englishclass-fitf.onrender.com', 'http://localhost:5432'],
+    origin: 'https://englishclass-fitf.onrender.com',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
