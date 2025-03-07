@@ -43,6 +43,11 @@ router.post('/', async (req, res) => {
         // Inicializar um array para armazenar os IDs das categorias
         const categoriaIds = [];
 
+         // Se categorias estiver vazia, aborta o processo
+         if (categorias.length === 0) {
+            return res.status(400).json({ error: 'A lista de categorias não pode estar vazia.' });
+        }
+        
         // Iterar sobre todas as categorias para verificar ou criar
         for (let categoria of categorias) {
             console.log("Nome da categoria recebido:", categoria); // Imprime o nome da categoria
