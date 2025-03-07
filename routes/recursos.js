@@ -19,6 +19,7 @@ async function verificarOuCriarCategoria(categoria) {
     const query = 'SELECT id FROM categorias WHERE nome = $1';
     try {
         const { rows } = await pool.query(query, [categoria]);
+
         if (rows.length > 0) {
             console.log("Categoria já existe:", categoria);
             return rows[0].id;
@@ -38,8 +39,8 @@ async function verificarOuCriarCategoria(categoria) {
 router.post('/', async (req, res) => {
     const { nome, categorias, url, descricao } = req.body;
 
-    // Verificar o corpo da requisição
-    console.log("Dados recebidos:", req.body); // Isso ajuda a ver o que realmente está sendo enviado
+    // Verifique o corpo da requisição
+    console.log("Dados recebidos:", req.body);
 
     if (!nome || !categorias || !categorias.length || !url || !descricao) {
         return res.status(400).json({ error: 'Todos os campos são obrigatórios e a categoria não pode estar vazia.' });
@@ -49,14 +50,14 @@ router.post('/', async (req, res) => {
         // Inicializar um array para armazenar os IDs das categorias
         const categoriaIds = [];
 
-         // Se categorias estiver vazia, aborta o processo
-         if (categorias.length === 0) {
+        // Se categorias estiver vazia, aborta o processo
+        if (categorias.length === 0) {
             return res.status(400).json({ error: 'A lista de categorias não pode estar vazia.' });
         }
 
         // Iterar sobre todas as categorias para verificar ou criar
         for (let categoria of categorias) {
-            console.log("Nome da categoria recebido:", categoria); // Imprime o nome da categoria
+            console.log("Nome da categoria recebido:", categoria);
             const categoriaId = await verificarOuCriarCategoria(categoria);
 
             if (categoriaId) {
@@ -81,6 +82,7 @@ router.post('/', async (req, res) => {
 
         // Inserir todas as associações
         for (let categoriaId of categoriaIds) {
+            console.log("Associando Recurso ID:", recursoId, "Categoria ID:", categoriaId);
             await pool.query(insertAssociationsQuery, [recursoId, categoriaId]);
         }
 
