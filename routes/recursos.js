@@ -98,6 +98,32 @@ router.post('/', async (req, res) => {
             }
         }
 
+        // Recuperar as categorias associadas ao recurso
+        const queryCategoriasAssociadas = `
+        SELECT c.nome
+        FROM categorias c
+        JOIN recursos_categorias rc ON c.id = rc.categoria_id
+        WHERE rc.recurso_id = $1
+        `;
+
+        try {
+        const { rows: categoriasRows } = await pool.query(queryCategoriasAssociadas, [recursoId]);
+        const categoriasAssociadas = categoriasRows.map(row => row.nome); // Extraindo os nomes das categorias
+
+        // Enviar resposta ao frontend com os dados completos
+        res.json({
+            id: recursoId,
+            nome: nome,
+            categorias: categoriasAssociadas, // Agora incluímos as categorias associadas
+            url: url,
+            descricao: descricao
+        });
+
+        } catch (err) {
+        console.error("Erro ao recuperar categorias associadas:", err);
+        res.status(500).json({ error: "Erro ao recuperar categorias associadas." });
+        }
+
         res.json({ id: recursoId });
     } catch (error) {
         console.error("Erro:", error);
