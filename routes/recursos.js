@@ -34,12 +34,12 @@ async function verificarOuCriarCategoria(categoria) {
 
 // Adicionar um novo recurso
 router.post('/', async (req, res) => {
-    const { nome, categoria, url, descricao } = req.body;
+    const { nome, categorias, url, descricao } = req.body;
 
     try {
-        console.log("Recebendo dados:", req.body); // Verifique se os dados estão corretos
-        console.log('Nome da categoria recebido:', nome);
-        
+        const categoria = categorias[0];
+        console.log('Nome da categoria recebido:', categoria);
+
         const categoriaId = await verificarOuCriarCategoria(categoria);
         const query = "INSERT INTO recursos (nome, categoria_id, url, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
         const { rows } = await pool.query(query, [nome, categoriaId, url, descricao]);
