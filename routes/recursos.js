@@ -38,6 +38,7 @@ router.post('/', async (req, res) => {
 
     try {
         console.log("Recebendo dados:", req.body); // Verifique se os dados estão corretos
+        console.log('Nome da categoria recebido:', nome);
         
         const categoriaId = await verificarOuCriarCategoria(categoria);
         const query = "INSERT INTO recursos (nome, categoria_id, url, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
