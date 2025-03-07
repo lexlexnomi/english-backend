@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../database/db');
-const fetch = require('node-fetch');  // Para realizar requisições HTTP para a API de temas
+import fetch from 'node-fetch';  // Para realizar requisições HTTP para a API de temas
 
 const router = express.Router();
 
