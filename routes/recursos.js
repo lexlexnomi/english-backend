@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Função para verificar se uma categoria já existe
+// Função para verificar se uma categoria já existe ou criar
 async function verificarOuCriarCategoria(categoria) {
     const query = 'SELECT id FROM categorias WHERE nome = $1';
     try {
@@ -36,16 +36,40 @@ async function verificarOuCriarCategoria(categoria) {
 router.post('/', async (req, res) => {
     const { nome, categorias, url, descricao } = req.body;
 
+    // Verificar o corpo da requisição
+    console.log("Dados recebidos:", req.body); // Isso ajuda a ver o que realmente está sendo enviado
+
     try {
-        const categoria = categorias[0];
-        console.log('Nome da categoria recebido:', categoria);
+        // Inicializar um array para armazenar os IDs das categorias
+        const categoriaIds = [];
 
-        const categoriaId = await verificarOuCriarCategoria(categoria);
-        const query = "INSERT INTO recursos (nome, categoria_id, url, descricao) VALUES ($1, $2, $3, $4) RETURNING id";
-        const { rows } = await pool.query(query, [nome, categoriaId, url, descricao]);
+        // Iterar sobre todas as categorias para verificar ou criar
+        for (let categoria of categorias) {
+            console.log("Nome da categoria recebido:", categoria); // Imprime o nome da categoria
+            const categoriaId = await verificarOuCriarCategoria(categoria);
+            categoriaIds.push(categoriaId); // Adiciona o ID da categoria ao array
+        }
 
-        res.json({ id: rows[0].id });
+        // Adicionar o recurso na tabela 'recursos'
+        const query = "INSERT INTO recursos (nome, url, descricao) VALUES ($1, $2, $3) RETURNING id";
+        const { rows } = await pool.query(query, [nome, url, descricao]);
+        const recursoId = rows[0].id;
+
+        // Agora associamos o recurso com as categorias na tabela 'recursos_categorias'
+        const insertAssociationsQuery = `
+            INSERT INTO recursos_categorias (recurso_id, categoria_id)
+            VALUES 
+            ($1, $2), 
+            ($1, $3), 
+            ($1, $4)
+        `;
+
+        // Inserir todas as associações
+        await pool.query(insertAssociationsQuery, [recursoId, categoriaIds[0], categoriaIds[1], categoriaIds[2]]);
+
+        res.json({ id: recursoId });
     } catch (error) {
+        console.error("Erro:", error);
         res.status(500).json({ error: error.message });
     }
 });
