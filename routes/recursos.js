@@ -22,12 +22,12 @@ async function verificarOuCriarCategoria(categoria) {
 
         if (rows.length > 0) {
             console.log("Categoria já existe:", categoria);
-            return rows[0].id;
+            return rows[0].id;  // Retorna o ID da categoria
         } else {
             const insertQuery = "INSERT INTO categorias (nome) VALUES ($1) RETURNING id";
             const { rows: insertRows } = await pool.query(insertQuery, [categoria]);
             console.log("Categoria criada:", categoria);
-            return insertRows[0].id;
+            return insertRows[0].id;  // Retorna o ID da nova categoria
         }
     } catch (err) {
         console.error("Erro ao verificar/criar categoria:", err);
@@ -73,17 +73,26 @@ router.post('/', async (req, res) => {
         const { rows } = await pool.query(query, [nome, url, descricao]);
         const recursoId = rows[0].id;
 
-        // Agora associamos o recurso com as categorias na tabela 'recursos_categorias'
+        // Inserir todas as associações
         const insertAssociationsQuery = `
-            INSERT INTO recursos_categorias (recurso_id, categoria_id)
-            VALUES 
-            ($1, $2)
+        INSERT INTO recursos_categorias (recurso_id, categoria_id)
+        VALUES ($1, $2)
         `;
 
-        // Inserir todas as associações
+        // Para cada categoria associada ao recurso, vamos inserir a associação
         for (let categoriaId of categoriaIds) {
             console.log("Associando Recurso ID:", recursoId, "Categoria ID:", categoriaId);
-            await pool.query(insertAssociationsQuery, [recursoId, categoriaId]);
+            try {
+                // Verifique o valor de categoriaId antes da inserção
+                if (!categoriaId) {
+                    throw new Error("Categoria ID está indefinido.");
+                }
+                
+                await pool.query(insertAssociationsQuery, [recursoId, categoriaId]);
+            } catch (error) {
+                console.error("Erro ao associar categoria ao recurso:", error);
+                return res.status(500).json({ error: `Erro ao associar a categoria ${categoriaId} ao recurso.` });
+            }
         }
 
         res.json({ id: recursoId });
