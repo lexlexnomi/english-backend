@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
     try {
         // Consulta para listar todos os recursos e suas categorias associadas
         const query = `
-            SELECT r.id AS recurso_id, r.nome AS recurso_nome, r.url, r.descricao,
+            SELECT r.id AS recurso_id, r.nome AS nome, r.url, r.descricao,
                 array_agg(c.nome) AS categorias
             FROM recursos r
             LEFT JOIN recursos_categorias rc ON r.id = rc.recurso_id
@@ -22,6 +22,17 @@ router.get('/', async (req, res) => {
         res.json(rows);
     } catch (err) {
         console.error("Erro ao listar recursos:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Rota de categorias
+router.get('/categorias', async (req, res) => {
+    try {
+        const query = 'SELECT * FROM categorias';
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
