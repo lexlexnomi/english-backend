@@ -111,7 +111,7 @@ router.post('/', async (req, res) => {
         const categoriasAssociadas = categoriasRows.map(row => row.nome); // Extraindo os nomes das categorias
 
         // Enviar resposta ao frontend com os dados completos
-        res.json({
+        return res.json({
             id: recursoId,
             nome: nome,
             categorias: categoriasAssociadas, // Agora incluímos as categorias associadas
