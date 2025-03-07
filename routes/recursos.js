@@ -20,10 +20,12 @@ async function verificarOuCriarCategoria(categoria) {
     try {
         const { rows } = await pool.query(query, [categoria]);
         if (rows.length > 0) {
+            console.log("Categoria já existe:", categoria);
             return rows[0].id;
         } else {
             const insertQuery = "INSERT INTO categorias (nome) VALUES ($1) RETURNING id";
             const { rows: insertRows } = await pool.query(insertQuery, [categoria]);
+            console.log("Categoria criada:", categoria);
             return insertRows[0].id;
         }
     } catch (err) {
@@ -39,6 +41,10 @@ router.post('/', async (req, res) => {
     // Verificar o corpo da requisição
     console.log("Dados recebidos:", req.body); // Isso ajuda a ver o que realmente está sendo enviado
 
+    if (!nome || !categorias || !categorias.length || !url || !descricao) {
+        return res.status(400).json({ error: 'Todos os campos são obrigatórios e a categoria não pode estar vazia.' });
+    }
+
     try {
         // Inicializar um array para armazenar os IDs das categorias
         const categoriaIds = [];
@@ -47,12 +53,18 @@ router.post('/', async (req, res) => {
          if (categorias.length === 0) {
             return res.status(400).json({ error: 'A lista de categorias não pode estar vazia.' });
         }
-        
+
         // Iterar sobre todas as categorias para verificar ou criar
         for (let categoria of categorias) {
             console.log("Nome da categoria recebido:", categoria); // Imprime o nome da categoria
             const categoriaId = await verificarOuCriarCategoria(categoria);
-            categoriaIds.push(categoriaId); // Adiciona o ID da categoria ao array
+
+            if (categoriaId) {
+                categoriaIds.push(categoriaId); // Adiciona o ID da categoria ao array
+            } else {
+                console.log(`Categoria não encontrada ou não criada para: ${categoria}`);
+                return res.status(500).json({ error: `Erro ao associar a categoria ${categoria}` });
+            }
         }
 
         // Adicionar o recurso na tabela 'recursos'
@@ -64,13 +76,13 @@ router.post('/', async (req, res) => {
         const insertAssociationsQuery = `
             INSERT INTO recursos_categorias (recurso_id, categoria_id)
             VALUES 
-            ($1, $2), 
-            ($1, $3), 
-            ($1, $4)
+            ($1, $2)
         `;
 
         // Inserir todas as associações
-        await pool.query(insertAssociationsQuery, [recursoId, categoriaIds[0], categoriaIds[1], categoriaIds[2]]);
+        for (let categoriaId of categoriaIds) {
+            await pool.query(insertAssociationsQuery, [recursoId, categoriaId]);
+        }
 
         res.json({ id: recursoId });
     } catch (error) {
