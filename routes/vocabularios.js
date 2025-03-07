@@ -23,9 +23,10 @@ router.get('/aula/:numeroAula', async (req, res) => {
     const { numeroAula } = req.params;
     console.log(`Buscando vocabulários para a aula ${numeroAula}`);
     const query = `
-        SELECT vocabularios.*, aulas.numero as numero_aula, aulas.data 
+        SELECT vocabularios.*, aulas.numero as numero_aula, aulas.data, temas.nome as tema
         FROM vocabularios
         JOIN aulas ON vocabularios.aula_id = aulas.id
+        JOIN temas ON vocabularios.tema_id = temas.id
         WHERE aulas.numero = $1`;
     try {
         const { rows } = await pool.query(query, [numeroAula]);
@@ -55,7 +56,7 @@ async function verificarOuCriarTema(tema) {
     }
 }
 
-// Adicionar um novo vocabulário
+// Adicionar um novo vocabulário com tema
 router.post('/', async (req, res) => {
     const { aula_id, palavra, significado, tema, frase_exemplo } = req.body;
 
