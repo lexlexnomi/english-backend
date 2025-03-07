@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../database/db');
+const fetch = require('node-fetch');  // Para realizar requisições HTTP para a API de temas
 
 const router = express.Router();
 
@@ -53,24 +54,6 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Função para verificar se um tema já existe
-async function verificarOuCriarTema(tema) {
-    const query = 'SELECT id FROM temas WHERE nome = $1';
-    try {
-        const { rows } = await pool.query(query, [tema]);
-        if (rows.length > 0) {
-            return rows[0].id;
-        } else {
-            const insertQuery = "INSERT INTO temas (nome) VALUES ($1) RETURNING id";
-            const { rows: insertRows } = await pool.query(insertQuery, [tema]);
-            return insertRows[0].id;
-        }
-    } catch (err) {
-        console.error("Erro ao verificar/criar tema:", err);
-        throw err;
-    }
-}
-
 // Adicionar um novo texto
 router.post('/', async (req, res) => {
     const { titulo, aula_id, tema, conteudo } = req.body;
@@ -78,7 +61,11 @@ router.post('/', async (req, res) => {
     try {
         console.log("Recebendo dados:", req.body); // Verifique se os dados estão corretos
 
-        const temaId = await verificarOuCriarTema(tema);
+        // Buscando o tema na API de temas
+        const temaResponse = await fetch(`http://localhost:3000/api/temas?nome=${tema}`);
+        const temaData = await temaResponse.json();
+        const temaId = temaData.id;  // A API deve retornar o ID do tema
+        
         const query = "INSERT INTO textos (titulo, aula_id, tema_id, conteudo) VALUES ($1, $2, $3, $4) RETURNING id";
         const { rows } = await pool.query(query, [titulo, aula_id, temaId, conteudo]);
 
