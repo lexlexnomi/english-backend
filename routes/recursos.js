@@ -22,7 +22,7 @@ async function verificarOuCriarCategoria(categoria) {
 
         if (rows.length > 0) {
             console.log("Categoria já existe:", categoria);
-            return rows[0].id;  // Retorna o ID da categoria
+            return rows[0].id;  // Retorna o ID da categoria existente
         } else {
             const insertQuery = "INSERT INTO categorias (nome) VALUES ($1) RETURNING id";
             const { rows: insertRows } = await pool.query(insertQuery, [categoria]);
@@ -82,16 +82,19 @@ router.post('/', async (req, res) => {
         // Para cada categoria associada ao recurso, vamos inserir a associação
         for (let categoriaId of categoriaIds) {
             console.log("Associando Recurso ID:", recursoId, "Categoria ID:", categoriaId);
+
+            if (!categoriaId) {
+                console.error("Erro: categoriaId é undefined ou null");
+                continue;  // Pular inserção se categoriaId estiver indefinido
+            }
+
             try {
-                // Verifique o valor de categoriaId antes da inserção
-                if (!categoriaId) {
-                    throw new Error("Categoria ID está indefinido.");
-                }
-                
-                await pool.query(insertAssociationsQuery, [recursoId, categoriaId]);
+                // Inserir na tabela intermediária
+                const result = await pool.query(insertAssociationsQuery, [recursoId, categoriaId]);
+                console.log(`Categoria ${categoriaId} associada ao recurso ${recursoId}`);
             } catch (error) {
                 console.error("Erro ao associar categoria ao recurso:", error);
-                return res.status(500).json({ error: `Erro ao associar a categoria ${categoriaId} ao recurso.` });
+                return res.status(500).json({ error: `Erro ao associar categoria ${categoriaId} ao recurso.` });
             }
         }
 
